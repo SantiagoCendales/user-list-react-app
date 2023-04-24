@@ -11,3 +11,7 @@ tr:nth-child(even ) {
   /* font-size: 24px;
   color:white; */
 }
+
+.pointer {
+  cursor: pointer;
+}
