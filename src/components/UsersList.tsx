@@ -2,7 +2,7 @@
 import { SortBy, type User } from '../types.d'
 
 interface Props {
-  users: User[]
+  users: User[] | undefined
   showColors: boolean
   handleDelete: (uuid: string) => void
   handleChangeSort: (sortType: SortBy) => void
@@ -21,7 +21,7 @@ export const UsersList = ({ users, showColors, handleDelete, handleChangeSort }:
       </thead>
       <tbody>
         {
-          users.map((user, index) => {
+          users?.map((user, index) => {
             const backgroundColor = index % 2 === 0 ? '#3333' : '#5555'
             const color = showColors ? backgroundColor : 'transparent'
             return (

@@ -22,20 +22,32 @@ function App () {
   const originalUsers = useRef<User[]>([])
   const [filterByCountry, setFilterByCountry] = useState<string | null>(null)
 
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+
   useEffect(() => {
     const getUsers = async () => {
+      setLoading(true)
+      setError(null)
       try {
-        const resp = await fetch('https://randomuser.me/api?results=100')
+        const resp = await fetch(`https://randomuser.me/api?page=${currentPage}&results=10&seed=santi`)
         const data = await resp.json()
-        setUsers(data.results)
-        originalUsers.current = data.results
+        setUsers((prevUsers) => {
+          const newUsers = prevUsers.concat(data.results)
+          originalUsers.current = newUsers
+          return newUsers
+        })
       } catch (err) {
+        setError(err)
         console.log(err)
+      } finally {
+        setLoading(false)
       }
     }
 
     getUsers().then().catch(e => { console.log(e) })
-  }, [])
+  }, [currentPage])
 
   const toggleColors = () => {
     setShowColors(!showColors)
@@ -112,7 +124,24 @@ function App () {
         />
       </header>
       <main>
-        <UsersList handleChangeSort={handleSetSorting} handleDelete={handleDelete} showColors={showColors} users={sortedUsers}></UsersList>
+      {
+          users.length > 0 &&
+          <UsersList
+            handleChangeSort={handleSetSorting}
+            handleDelete={handleDelete}
+            showColors={showColors}
+            users={sortedUsers}
+          />
+        }
+        {loading && <p>Cargando...</p>}
+        {!loading && error && <p>Ha habido un error</p>}
+        {!loading && !error && users.length === 0 && <p>No hay resultados</p>}
+        {
+          !loading && !error &&
+          <button onClick={() => { setCurrentPage(currentPage + 1) }}>
+            Cargar mas
+          </button>
+        }
       </main>
     </>
   )
