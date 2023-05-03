@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { SortBy, type User } from './types.d'
 import { UsersList } from './components/UsersList'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { useUsers } from './hooks/useUsers'
 
 // const sortedUsers = sortByCountry
 //   ? users.sort((a, b) => { // El código se rompe porque sort muta el array original, por tanto users ya esta ordenado y ya no puedo mostrar el order original
@@ -16,38 +18,13 @@ import { UsersList } from './components/UsersList'
 //   : users
 
 function App () {
-  const [users, setUsers] = useState<User[]>([])
+  const { users, isLoading, isError, refetch, fetchNextPage, hasNextPage } = useUsers()
+
   const [showColors, setShowColors] = useState(false)
   const [sorting, setSorting] = useState<SortBy>(SortBy.NONE)
-  const originalUsers = useRef<User[]>([])
   const [filterByCountry, setFilterByCountry] = useState<string | null>(null)
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-
-  useEffect(() => {
-    const getUsers = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const resp = await fetch(`https://randomuser.me/api?page=${currentPage}&results=10&seed=santi`)
-        const data = await resp.json()
-        setUsers((prevUsers) => {
-          const newUsers = prevUsers.concat(data.results)
-          originalUsers.current = newUsers
-          return newUsers
-        })
-      } catch (err) {
-        setError(err)
-        console.log(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    getUsers().then().catch(e => { console.log(e) })
-  }, [currentPage])
 
   const toggleColors = () => {
     setShowColors(!showColors)
@@ -59,7 +36,7 @@ function App () {
   }
 
   const handleReset = () => {
-    setUsers(originalUsers.current)
+    void refetch()
   }
 
   const handleSetSorting = (sortType: SortBy) => {
@@ -75,10 +52,10 @@ function App () {
   }, [users, filterByCountry])
 
   const handleDelete = (uuid: string) => {
-    const filteredUsers = users.filter((user) => {
-      return uuid !== user.login.uuid
-    })
-    setUsers(filteredUsers)
+    // const filteredUsers = users.filter((user) => {
+    //   return uuid !== user.login.uuid
+    // })
+    // setUsers(filteredUsers)
   }
 
   const sortedUsers = useMemo(() => {
@@ -133,12 +110,12 @@ function App () {
             users={sortedUsers}
           />
         }
-        {loading && <p>Cargando...</p>}
-        {!loading && error && <p>Ha habido un error</p>}
-        {!loading && !error && users.length === 0 && <p>No hay resultados</p>}
+        {isLoading && <p>Cargando...</p>}
+        {!isLoading && isError && <p>Ha habido un error</p>}
+        {!isLoading && !isError && users.length === 0 && <p>No hay resultados</p>}
         {
-          !loading && !error &&
-          <button onClick={() => { setCurrentPage(currentPage + 1) }}>
+          !isLoading && !isError && hasNextPage === true &&
+          <button onClick={() => { void fetchNextPage() }}>
             Cargar mas
           </button>
         }
